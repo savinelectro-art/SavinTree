@@ -668,9 +668,26 @@ PEOPLE.forEach(p => (p.parents || []).forEach(pid => {
 }));
 
 const genNumbers = [...new Set(PEOPLE.map(p => p.gen))].sort((a,b)=>a-b);
-const GEN_YEARS = {
-  1:'1870-е — 1900-е', 2:'1900-е — 1930-е', 3:'1925-е — 1955-е',
-  4:'1950-е — 1985-е', 5:'1975-е — 2005-е', 6:'2000-е — наши дни'
+function computeGenYears(gen) {
+  const peopleInGen = PEOPLE.filter(p => p.gen === gen);
+  let minYear = null, maxYear = null, hasAlive = false;
+
+  peopleInGen.forEach(p => {
+    const raw = (p.years || '').trim();
+    if (/[-–—]\s*$/.test(raw)) hasAlive = true;
+    const matches = raw.match(/\d{4}/g);
+    if (matches) {
+      matches.forEach(y => {
+        const num = parseInt(y, 10);
+        if (minYear === null || num < minYear) minYear = num;
+        if (maxYear === null || num > maxYear) maxYear = num;
+      });
+    }
+  });
+
+  if (minYear === null) return 'даты неизвестны';
+  if (hasAlive) return `${minYear}–`;
+  return `${minYear}–${maxYear}`;
 };
 
 document.getElementById('stat-people').textContent = PEOPLE.length;
@@ -690,7 +707,7 @@ genNumbers.forEach((gen, idx) => {
 
   const label = document.createElement('div');
   label.className = 'gen-label';
-  label.innerHTML = `<span class="n">Поколение ${gen}</span><span class="years">${GEN_YEARS[gen] || ''}</span>`;
+  label.innerHTML = `<span class="n">Поколение ${gen}</span><span class="years">${computeGenYears(gen)}</span>`;
   row.appendChild(label);
 
   const track = document.createElement('div');
